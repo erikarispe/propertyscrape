@@ -26,19 +26,21 @@ Create a New Python File:
 
 Open a text editor (like Notepad on Windows, TextEdit on macOS, or any code editor such as VS Code).
 Copy the Python script provided in the pythonscrapebyaccountnumber file
-Paste and Save the Script:
+Paste and Save the Script with a .py extension
 
-Paste the copied code into your text editor.
-Save the file with a .py extension, for example, property_scraper.py. Make sure you remember the location where you saved the file.
+for example, property_scraper.py. 
+Make sure you remember the location where you saved the file.
 
 Edit the Property ID:
 
-Within the script, modify the value of property_id with the ID of the property you want to scrape, e.g.: property_id = '00000602857000000'  # Replace this with the desired property ID
+Within the code, modify the value of property_id with the ID of the property you want to scrape, e.g.: property_id = '00000602857000000'  # Replace this with the desired property ID
 
 Run the Script:
 
-Type the following command and press Enter:
-python property_scraper.py
+Type the following command depending if you are windows or mac and press Enter:
+python property_scraper.py    (windows)
+python3 property_scraper.py    (mac)
+
 
 Check for Output:
 
