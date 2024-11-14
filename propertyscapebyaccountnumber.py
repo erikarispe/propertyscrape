@@ -1,3 +1,8 @@
+#You must copy this code and save it to a file with a .py extension
+#you will change the property_id value to the account number you want to scrape
+
+
+
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
