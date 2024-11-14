@@ -24,7 +24,7 @@ pip install requests beautifulsoup4 pandas openpyxl
 Step 3: Prepare the Python Script
 Create a New Python File:
 
-Open a text editor (like Notepad on Windows, TextEdit on macOS, or any code editor such as VS Code or PyCharm).
+Open a text editor (like Notepad on Windows, TextEdit on macOS, or any code editor such as VS Code).
 Copy the Python script provided in the pythonscrapebyaccountnumber file
 Paste and Save the Script:
 
