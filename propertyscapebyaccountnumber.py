@@ -2,9 +2,12 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import os
+from openpyxl import load_workbook
+from openpyxl.styles import Alignment
 
 # URL of the page to scrape
-property_id = '00000602857000000'
+property_id = input("Please enter the property ID: ")
+
 url = f'https://www.dallascad.org/AcctDetailCom.aspx?ID={property_id}#Legal'
 
 # Perform a GET request to fetch the HTML content
@@ -69,6 +72,7 @@ else:
 
     # Prepare data to append to Excel
     data = {
+        'Commerical Account #': [property_id],
         'Address': [address_found],
         'Deed Transfer Date': [deed_transfer_date_found],
         'Owner': [owner_found],
@@ -92,4 +96,29 @@ else:
         df_new = pd.DataFrame(data)
         df_new.to_excel(excel_file, index=False)
 
-    print("Data has been written to Excel successfully.")
+    # Use openpyxl to open the new Excel file and set text wrapping and column widths
+    wb = load_workbook(excel_file)
+    ws = wb.active
+
+    # Set wrap_text for owner and address columns (adjust the column indices if needed)
+    for row in ws.iter_rows(min_row=2, min_col=1, max_col=len(data)):  # Adjust max_col based on your DataFrame
+        for cell in row:
+            cell.alignment = Alignment(wrap_text=True)
+
+    # Adjust the width of each column
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter  # Get the column letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        # Set the width to max_length + 2 for some padding
+        ws.column_dimensions[column_letter].width = max_length + 2
+
+    # Save the workbook
+    wb.save(excel_file)
+
+    print(f"Data for {property_id} has been written to Excel successfully.")
