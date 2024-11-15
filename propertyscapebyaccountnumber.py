@@ -1,8 +1,3 @@
-#You must copy this code and save it to a file with a .py extension
-#you will change the property_id value to the account number you want to scrape
-
-
-
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -22,30 +17,44 @@ else:
     # Parse the HTML content
     soup = BeautifulSoup(page.content, "html.parser")
 
-    # Extract required data
+    # Extract the address
     address = soup.find('span', id='PropAddr1_lblPropAddr')
     address_found = address.text.strip() if address else "Address not found"
 
+    # Extract the deed transfer date
     deed_transfer_date = soup.find('span', id='LegalDesc1_lblSaleDate')
     deed_transfer_date_found = deed_transfer_date.text.strip() if deed_transfer_date else "Deed transfer date not found"
 
+    # Extract owner information
     owner_section = soup.find('span', id='lblOwner')
-    owner_found = owner_section.next_sibling.strip() if owner_section else "Owner not found"
+    if owner_section:
+        # Initialize a list to collect owner lines
+        owner_info_list = []
 
-    # Extract Total Area
+        # Add the owner information directly from the siblings
+        for sibling in owner_section.next_siblings:
+            if sibling.name == 'br':  # Skip <br> tags
+                continue
+            if sibling.string:  # Add text content of sibling nodes
+                line = sibling.strip().replace('\u00a0', ' ')  # Replace non-breaking spaces with regular spaces
+                owner_info_list.append(line)
+
+        # Combine the lines into a formatted string
+        owner_found = '\n'.join(owner_info_list)
+    else:
+        owner_found = "Owner not found"
+
+    # Extract total area
     total_area_display = "Total area not found"
-    
-    # Locate the improvements table
-    improvements_table = soup.find('span', string=lambda t: t and 'Improvements (Current 2025)' in t).find_next('table')
-
+    improvements_table = soup.find('span', string=lambda t: t and 'Improvements (Current 2025)' in t)
     if improvements_table:
-        # Locating the row containing the "Total Area" data
+        improvements_table = improvements_table.find_next('table')
         for row in improvements_table.find_all('tr'):
             if 'Total Area:' in row.text:
                 total_area_display = row.find_all('td')[1].text.strip()  # Get the relevant cell
                 break
 
-    # Extract zoning from the "Land" section
+    # Extract zoning information
     zoning_found = "Zoning info not found"
     land_table = soup.find('table', id='Land1_dgLand')
     if land_table:
@@ -69,7 +78,7 @@ else:
     }
 
     # Define the Excel file name
-    excel_file = 'property_data.xlsx'
+    excel_file = "property_data.xlsx"
 
     # Check if the file exists
     if os.path.exists(excel_file):
