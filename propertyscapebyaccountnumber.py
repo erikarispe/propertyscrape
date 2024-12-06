@@ -5,18 +5,24 @@ import os
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment
 
-# URL of the page to scrape
-property_id = input("Please enter the property ID: ")
+# List of property IDs to process
+property_ids = [  FILL THIS IN    ]
 
-url = f'https://www.dallascad.org/AcctDetailCom.aspx?ID={property_id}#Legal'
+# Prepare to accumulate data for all properties
+all_data = []
 
-# Perform a GET request to fetch the HTML content
-page = requests.get(url)
+# Iterate over each property ID
+for property_id in property_ids:
+    url = f'https://www.dallascad.org/AcctDetailCom.aspx?ID={property_id}#Legal'
 
-# Check if the request was successful
-if page.status_code != 200:
-    print(f"Failed to retrieve webpage: {page.status_code}")
-else:
+    # Perform a GET request to fetch the HTML content
+    page = requests.get(url)
+
+    # Check if the request was successful
+    if page.status_code != 200:
+        print(f"Failed to retrieve webpage for {property_id}: {page.status_code}")
+        continue  # Skip to the next property ID
+
     # Parse the HTML content
     soup = BeautifulSoup(page.content, "html.parser")
 
@@ -33,16 +39,12 @@ else:
     if owner_section:
         # Initialize a list to collect owner lines
         owner_info_list = []
-
-        # Add the owner information directly from the siblings
         for sibling in owner_section.next_siblings:
             if sibling.name == 'br':  # Skip <br> tags
                 continue
             if sibling.string:  # Add text content of sibling nodes
                 line = sibling.strip().replace('\u00a0', ' ')  # Replace non-breaking spaces with regular spaces
                 owner_info_list.append(line)
-
-        # Combine the lines into a formatted string
         owner_found = '\n'.join(owner_info_list)
     else:
         owner_found = "Owner not found"
@@ -70,55 +72,59 @@ else:
     land_area_span = soup.find('span', id='Land1_dgLand__ctl2_Label1')
     land_area_found = land_area_span.text.strip() if land_area_span else "Land area not found"
 
-    # Prepare data to append to Excel
+    # Prepare data for this property
     data = {
-        'Commerical Account #': [property_id],
-        'Address': [address_found],
-        'Deed Transfer Date': [deed_transfer_date_found],
-        'Owner': [owner_found],
-        'Total Area': [total_area_display],
-        'Zoning': [zoning_found],
-        'Land Area': [land_area_found]
+        'Commercial Account #': property_id,
+        'Address': address_found,
+        'Deed Transfer Date': deed_transfer_date_found,
+        'Owner': owner_found,
+        'Total Area': total_area_display,
+        'Zoning': zoning_found,
+        'Land Area': land_area_found
     }
 
-    # Define the Excel file name
-    excel_file = "property_data.xlsx"
+    # Append this property's data to the all_data list
+    all_data.append(data)
 
-    # Check if the file exists
-    if os.path.exists(excel_file):
-        # Load the existing Excel file and append the new data to it
-        df_existing = pd.read_excel(excel_file)
-        df_new = pd.DataFrame(data)
-        df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-        df_combined.to_excel(excel_file, index=False)
-    else:
-        # Create a new Excel file with headers
-        df_new = pd.DataFrame(data)
-        df_new.to_excel(excel_file, index=False)
+# Define the Excel file name
+excel_file = "property_datanew.xlsx"
 
-    # Use openpyxl to open the new Excel file and set text wrapping and column widths
-    wb = load_workbook(excel_file)
-    ws = wb.active
+# Create a DataFrame from all collected data
+df_all = pd.DataFrame(all_data)
 
-    # Set wrap_text for owner and address columns (adjust the column indices if needed)
-    for row in ws.iter_rows(min_row=2, min_col=1, max_col=len(data)):  # Adjust max_col based on your DataFrame
-        for cell in row:
-            cell.alignment = Alignment(wrap_text=True)
+# Check if the file exists
+if os.path.exists(excel_file):
+    # Load the existing Excel file and append the new data to it
+    df_existing = pd.read_excel(excel_file)
+    df_combined = pd.concat([df_existing, df_all], ignore_index=True)
+    df_combined.to_excel(excel_file, index=False)
+else:
+    # Create a new Excel file with the collected data
+    df_all.to_excel(excel_file, index=False)
 
-    # Adjust the width of each column
-    for column in ws.columns:
-        max_length = 0
-        column_letter = column[0].column_letter  # Get the column letter
-        for cell in column:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except:
-                pass
-        # Set the width to max_length + 2 for some padding
-        ws.column_dimensions[column_letter].width = max_length + 2
+# Use openpyxl to open the new Excel file and set text wrapping and column widths
+wb = load_workbook(excel_file)
+ws = wb.active
 
-    # Save the workbook
-    wb.save(excel_file)
+# Set wrap_text for owner and address columns
+for row in ws.iter_rows(min_row=2, min_col=1, max_col=len(data)):  # Adjust max_col based on your DataFrame
+    for cell in row:
+        cell.alignment = Alignment(wrap_text=True)
 
-    print(f"Data for {property_id} has been written to Excel successfully.")
+# Adjust the width of each column
+for column in ws.columns:
+    max_length = 0
+    column_letter = column[0].column_letter  # Get the column letter
+    for cell in column:
+        try:
+            if len(str(cell.value)) > max_length:
+                max_length = len(str(cell.value))
+        except:
+            pass
+    # Set the width to max_length + 2 for some padding
+    ws.column_dimensions[column_letter].width = max_length + 2
+
+# Save the workbook
+wb.save(excel_file)
+
+print("Data for all properties has been written to Excel successfully.")
